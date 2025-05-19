@@ -1,48 +1,84 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const app = express();
+
 const PORT = process.env.PORT || 3000;
 
-const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.post("/ussd", (req, res) => {
-  // Read the variables sent via POST from our API
   const { sessionId, serviceCode, phoneNumber, text } = req.body;
+
+  const textValue = text.split("*");
+  const level = textValue.length;
 
   let response = "";
 
-  if (text == "") {
-    // This is the first request. Note how we start the response with CON
-    response = `CON Welcome To Alicade's USSD App
-    Choose Language(Hitamo Ururimi):
-        1. English
-        2. IKinyarwa
-        3. French `;
-  } else if (text == "1") {
-    // Business logic for first level response
-    response = `CON Choose account information you want to view
-        1. 
-        2.
-        3.
-        4.
-        5.`;
-  } else if (text == "2") {
-    // Business logic for first level response
-    // This is a terminal request. Note how we start the response with END
-    response = `END Your phone number is ${phoneNumber}`;
-  } else if (text == "1*1") {
-    // This is a second level response where the user selected 1 in the first instance
-    const accountNumber = "ACC100101";
-    // This is a terminal request. Note how we start the response with END
-    response = `END Your account number is ${accountNumber}`;
+  if (text === "") {
+    response = `CON Welcome to Alicade's Bank
+Choose Language (Ururimi):
+1. English
+2. IKinyarwanda
+3. French`;
   }
 
-  // Send the response back to the API
-  res.set("Content-Type: text/plain");
+  // English path
+  else if (text === "1") {
+    response = `CON Main Menu:
+1. Account Info
+2. Balance Inquiry
+3. Airtime Top-up
+4. Transfer Funds
+5. Contact Support`;
+  }
+
+  // English > Account Info
+  else if (text === "1*1") {
+    response = `END Account Number: ACC20231234
+Name: Alicade ABITURIJE DUSABE`;
+  }
+
+  // English > Balance Inquiry
+  else if (text === "1*2") {
+    response = `END Your balance is: RWF 1,108,450`;
+  }
+
+  // English > Airtime Top-up
+  else if (text === "1*3") {
+    response = `CON Enter amount to top up:`;
+  } else if (textValue[0] === "1" && textValue[1] === "3" && level === 3) {
+    const amount = textValue[2];
+    response = `END You have successfully topped up RWF ${amount}`;
+  }
+
+  // English > Transfer Funds
+  else if (text === "1*4") {
+    response = `CON Enter recipient phone number:`;
+  } else if (textValue[0] === "1" && textValue[1] === "4" && level === 3) {
+    response = `CON Enter amount to transfer:`;
+  } else if (textValue[0] === "1" && textValue[1] === "4" && level === 4) {
+    const recipient = textValue[2];
+    const amount = textValue[3];
+    response = `END You have sent RWF ${amount} to ${recipient}`;
+  }
+
+  // English > Contact Support
+  else if (text === "1*5") {
+    response = `END Contact Us:
+Email: support@alicade.rw
+Tel: +250 782 583 016`;
+  }
+
+  // Default fallback
+  else {
+    response = `END Invalid option. Please try again.`;
+  }
+
+  res.set("Content-Type", "text/plain");
   res.send(response);
 });
 
 app.listen(PORT, () => {
-  console.log(`The USSD App is Listening To Port:${PORT}`);
+  console.log(`Alicade's USSD app running on port ${PORT}`);
 });
